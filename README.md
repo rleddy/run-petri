@@ -9,14 +9,14 @@ A third, class, pTransition, is not exported. It is sufficiently abstract that i
 
 So, the list of classes implemented is the following:
 
-RunPetri
-pNode
-pTransition
+..* RunPetri
+* pNode
+* pTransition
 
 And, the exported classes are:
 
-RunPetri
-pNode
+..* RunPetri
+* pNode
 
 Changes of behavior from the default are to be made by subclassing: *pNode*.
 The way pNode may be subclassed will be discussed later.
