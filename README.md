@@ -9,13 +9,13 @@ A third, class, pTransition, is not exported. It is sufficiently abstract that i
 
 So, the list of classes implemented is the following:
 
-..* RunPetri
+* RunPetri
 * pNode
 * pTransition
 
 And, the exported classes are:
 
-..* RunPetri
+* RunPetri
 * pNode
 
 Changes of behavior from the default are to be made by subclassing: *pNode*.
@@ -96,6 +96,7 @@ You should be able to run it: * node tryout.js *
 
 You will see in the code that there is a switch statement. By looking at the cases, you will see that the program accepts four basic comamnds: load, report, send, step. 
 
+..
 Use ```load <filename>``` to load the PetriNet description.
 Use ```report``` to see the states of the nodes. 
 Use ```send <node-name>``` to put some number of tokens into a node.
@@ -103,12 +104,12 @@ Use ```step``` to make transitions fire.
 
 For example load our example Petr net, p1.json.
 Then, 
-send L-sensor-1 3
-step
-report
-step
-step
-report
+* send L-sensor-1 3
+* step
+* report
+* step
+* step
+* report
 
 This example always shows 0 values for the exit nodes. But, step outputs that they receive the values to perform their tasks 
 
