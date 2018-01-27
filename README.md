@@ -96,11 +96,10 @@ You should be able to run it: * node tryout.js *
 
 You will see in the code that there is a switch statement. By looking at the cases, you will see that the program accepts four basic comamnds: load, report, send, step. 
 
-..
-Use ```load <filename>``` to load the PetriNet description.
-Use ```report``` to see the states of the nodes. 
-Use ```send <node-name>``` to put some number of tokens into a node.
-Use ```step``` to make transitions fire.
+- Use ```load <filename>``` to load the PetriNet description.
+- Use ```report``` to see the states of the nodes. 
+- Use ```send <node-name>``` to put some number of tokens into a node.
+- Use ```step``` to make transitions fire.
 
 For example load our example Petr net, p1.json.
 Then, 
