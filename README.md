@@ -92,7 +92,7 @@ _Source_ nodes automatically have event identifiers made out of them for use in 
 
 A basic cli application for the run-petri model can be found in the module directory. The JavaScript code is "tryout.js".
 
-You should be able to run it: * node tryout.js *
+You should be able to run it: **node tryout.js**
 
 You will see in the code that there is a switch statement. By looking at the cases, you will see that the program accepts four basic comamnds: load, report, send, step. 
 
