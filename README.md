@@ -51,10 +51,10 @@ When all the inputs nodes of a transition contain values, the Petri net may perf
 
 It is up to the application program to trigger the execution of the active transitions. At any time, the application may call pNet.step(), and drive the values forward. 
 
-When the appliation calls pNet.step(), 'step' examines all transitions for activation and then calls upon the reduction methods of the transition move the values. 
+When the appliation calls pNet.step(), *step* examines all transitions for activation and then calls upon the reduction methods of the transition move the values. 
 
 
-The RunPetri class is defined with a way for the application program to pass values into it asynchronoulsy. The JSON object may contain definitions of nodes that will be called 'sources'. The RunPetri instance compiles event handlers for events named with the ids of the source nodes. In this way, processes that take in data asynchronously may emit values to the source nodes, creating new resources that may flow throught the net. For example, if a source node is named, "sensor1", the applcation may call, pNet.emit("sensor1",value).
+The RunPetri class is defined with a way for the application program to pass values into it asynchronoulsy. The JSON object may contain definitions of nodes that will be called *sources*. The RunPetri instance compiles event handlers for events named with the ids of the source nodes. In this way, processes that take in data asynchronously may emit values to the source nodes, creating new resources that may flow throught the net. For example, if a source node is named, "sensor1", the applcation may call, pNet.emit("sensor1",value).
 
 
 # The JSON definition object
@@ -81,11 +81,11 @@ Here is an example of a JSON definition object for RunPeti:
 
 ```
 
-In the example, you can see an array of "nodes" and an array of "transitions".
+In the example, you can see an array of "_nodes_" and an array of "_transitions_".
 
-Each 'node' has an 'id' field and a 'type' field. If the type is not specified, it will be assumed to be "internal". If a node represents a subclass, the node definition should contain an additional 'class' field with a value being the name of a pNode subclass defined by the application.
+Each _node_ has an _id_ field and a _type_ field. If the type is not specified, it will be assumed to be "internal". If a node represents a subclass, the node definition should contain an additional _class_ field with a value being the name of a pNode subclass defined by the application.
 
-'Source' nodes automatically have event identifiers made out of them for use in node.js. 'Exit' nodes are used to release values. Each exit node recieves a reference to a value consuming callback function. It is up to the application to implement the most useful verions of this.
+_Source_ nodes automatically have event identifiers made out of them for use in node.js. _Exit_ nodes are used to release values. Each exit node recieves a reference to a value consuming callback function. It is up to the application to implement the most useful verions of this.
 
 
 # A Command Line Example
