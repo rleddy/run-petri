@@ -176,6 +176,29 @@ In fact, it has to override the following methods:
 * consume
 
 
+Here is how these methods are defined in the basic pNode class:
+
+```
+    count() {
+        return(this.resource)
+    }
+
+    addResource(value) {
+        this.resource += parseInt(value);  // default is to add how many
+    }
+
+    consume() {
+        this.resource -= 1;
+        return(1);
+    }
+
+```
+
+Now, to override them, the application can extend the pNode class as follows:
+
+
+
+
 
 
 
