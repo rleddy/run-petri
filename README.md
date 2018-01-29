@@ -57,7 +57,7 @@ When the appliation calls pNet.step(), *step* examines all transitions for activ
 The RunPetri class is defined with a way for the application program to pass values into it asynchronoulsy. The JSON object may contain definitions of nodes that will be called *sources*. The RunPetri instance compiles event handlers for events named with the ids of the source nodes. In this way, processes that take in data asynchronously may emit values to the source nodes, creating new resources that may flow throught the net. For example, if a source node is named, "sensor1", the applcation may call, pNet.emit("sensor1",value).
 
 
-# The JSON definition object
+# The JSON Definition Object
 
 
 Here is an example of a JSON definition object for RunPeti:
@@ -113,9 +113,69 @@ Then,
 This example always shows 0 values for the exit nodes. Exit nodes do not store their resource. They execute a callback that operates on the value derived from the resource that is receives. In many real situations, it may be that the exit node send commands to hardware elements. 
 
  
-# Creating subclasses of the pNode class.
+# Creating Subclasses of the pNode Class.
 
-more later.
+One reason to create subclasses of the pNode class is to make nodes with resources that are more descriptive than a simple count. The Petri Net with just counting is a good tool for synchornization. But, along with the synchronization, some computation may take place at the nodes and transitions. Defining this computation opens up the Petri Net structure for defining general computation, and pay be useful for sending final values downstream to other computational units or robotic mechanisms.
+
+Depending on the kind of reduction needed, the application may need to define a special reducer to use at the transitions. Instead of requiring a subclass of transitions to be made by the application, the specialized transformation is defined by the method of specifying an anonymous function. The defualt pTransition reducer is defined as follows.
+
+```
+	this.reducer = (accumulator, currentValue) => accumulator + currentValue; // default
+	this.initAccumulator = 0;  /// default
+```
+
+This accumulator with the default pNode behavior is a simple adder which will always be passed a value of one for the currentValue. In fact, this transition function would not have to be overridden if the application just wants to accumulate floating point values or concatinate strings. But, the application might want to pass arrays or objects along its path, or even a mixture of these things.
+
+When the application calls ```setNetworkFromJson(net_def,cbGen,nodeClasses)```, it may pass several parameters that define the behavior the network. 
+
+The first parameter has already been described above. But, there are a few more fields (features) that may be added into the description. 
+The second parameter is a function that takes in arguments that tell the function how to return a particular function for use in pNode or pTransitions. The third parameter is a table of class names for the descendants of pNode classes.
+
+The cbGen function is defined by the application. It take two parameters. 
+The first parameter is a the name of a node or key identifying a transition reducer. 
+The second parameter is a string indicating what kind of function cbGen should return. 
+Currently, the only node type that is being assign a callback is an 'exit' node. 
+
+```cbGen(<node name>,"exit")``` should return a callback that takes in a value, the result of reductions, such that the value will be processed or emitted to downstream processes or hardware. 
+
+```cbGen(<reducer name>,"reduce")```  should return a function that takes in expected pNode outputs, the results of the _consume_ method, a pNode method, flowing into a transition, where the transition will call its reducer on each of the pNode outputs.
+
+It is up to the application to make define the _reduce_ and _exit_ functions properly.
+
+The following update of the network defined previously shows specification of a reducer on a particular transition.
+
+```
+{
+	"nodes" : [
+			{ "id" : "L-sensor-1", "type" : "source" },
+			{ "id" : "Pump1", "type" : "exit" },
+			{ "id" : "mixer2", "type" : "exit" }
+	],
+
+	"transitions" : [
+				{
+					 "label" : "pump when ready",
+					 "inputs" : [ "L-sensor-1" ],
+					 "outputs" : [ "Pump1", "mixer2" ],
+					 "reduction" : {
+						"reducer" : "valueArray"
+						"initAccumulator" : []
+					}
+				}
+	]
+}
+
+```
+
+When a reducer is defined, it expects certain types of outputs from nodes. The default pNode class has a _consume_ method that returns 1 and a count function that returns its token count. So, this basic class does not have the mechanism to produce computed output. And, the application will have to derive a class from it and override a small number of methods.
+
+In fact, it has to override the following methods:
+
+* count
+* addResource(value)
+* consume
+
+
 
 
 

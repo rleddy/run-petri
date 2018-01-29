@@ -168,7 +168,7 @@ module.exports.RunPetri = class RunPetri extends EventEmitter {
     }
 
 
-    setNetworkFromJson(net_def,dataExitCb,nodeClasses) {
+    setNetworkFromJson(net_def,cbGen,nodeClasses) {
         var nodes = net_def.nodes.map(nodeDef => {
 
                                           var id = nodeDef.id;
@@ -187,7 +187,7 @@ module.exports.RunPetri = class RunPetri extends EventEmitter {
 
                                       });
 
-        this.loadGraph(nodes,net_def.transitions,dataExitCb);
+        this.loadGraph(nodes,net_def.transitions,cbGen);
     }
 
 
@@ -211,7 +211,7 @@ module.exports.RunPetri = class RunPetri extends EventEmitter {
                           if ( pnode.type === "exit" ) {
                               this.exitNodes[pnode.identity()] = pnode;
                               if ( pnode.exitCallBack === undefined ) {
-                                this.setExitCB(pnode.identity(),cbGen(pnode.identity()))
+                                this.setExitCB(pnode.identity(),cbGen(pnode.identity(),'exit'))
                               }
                           }
                      })
@@ -231,7 +231,8 @@ module.exports.RunPetri = class RunPetri extends EventEmitter {
 
                                                if ( transDef.reduction ) {
                                                    if ( transDef.reduction.reducer && transDef.reduction.initAccumulator ) {
-                                                       trans.setSpecialReduction(transDef.reduction.reducer,transDef.reduction.initAccumulator);
+                                                       var reduct = cbGen(transDef.reduction.reducer,'reduce')
+                                                       trans.setSpecialReduction(reduct,transDef.reduction.initAccumulator);
                                                    }
                                                }
 
