@@ -278,7 +278,7 @@ function callbackGenerator(id,cbType) {
 
 ```
 
-Now the JSON has more information in it so that these class can be used. (This json is in p2.json and the code is in tryout-subclass.js)
+Now the JSON has more information in it so that these classes can be used. (This json is in p2.json and the code is in tryout-subclass.js)
 
 
 ```
