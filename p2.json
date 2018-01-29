@@ -1,0 +1,14 @@
+{
+	"nodes" : [
+			{ "id" : "L-sensor-1", "type" : "source" },
+			{ "id" : "Pump1", "type" : "exit" },
+			{ "id" : "mixer2", "type" : "exit" }
+	],
+	"transitions" : [
+				{
+					 "label" : "pump when ready",
+					 "inputs" : [ "L-sensor-1" ],
+					 "outputs" : [ "Pump1", "mixer2" ]
+				}
+	]
+}

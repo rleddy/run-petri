@@ -178,7 +178,7 @@ module.exports.RunPetri = class RunPetri extends EventEmitter {
                                               pNet.on(id,pNet.reactor(id));
                                           }
 
-                                          if ( nodeDef.class ) {
+                                          if ( nodeDef.class && nodeClasses ) {
                                               var nodeClass = nodeClasses[nodeDef.class];
                                               return(new nodeClass(id,type));
                                           } else {
