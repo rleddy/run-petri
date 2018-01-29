@@ -197,7 +197,114 @@ Here is how these methods are defined in the basic pNode class:
 Now, to override them, the application can extend the pNode class as follows:
 
 
+```
 
+class queueValues extends pNode {
+    //
+    constructor(id,nodeType) {
+        super(id,nodeType)
+
+        this.arrayResQueue = [];
+    }
+
+    count() {
+        return(this.arrayResQueue.length)
+    }
+
+    addResource(value) {
+        this.arrayResQueue.push(value)
+    }
+
+    consume() {
+        var v = this.arrayResQueue.shift();
+        return(v);
+    }
+
+}
+
+
+
+class passStructs extends pNode {
+    //
+    constructor(id,nodeType) {
+        super(id,nodeType)
+
+        this.structResource = {};
+    }
+
+    count() {
+        var n = Object.keys(this.structResource).length;
+        return(n)
+    }
+
+    addResource(value) {
+        var key = value.key;
+        var data = value.value;
+        this.structResource[key] = data;
+    }
+
+    consume() {
+        return(this.structResource);
+    }
+
+}
+
+
+const nodeClasses = { pNode, queueValues, passStructs };
+
+
+
+```
+
+Because these pNode classes will release values in their special ways, it helps to change the reducer for transitions. So, here is the function that returns functions for nodes and transitions to call.
+
+```
+
+function callbackGenerator(id,cbType) {
+
+    if ( cbType === 'exit' ) {  // a fairly generic exit callback
+        var dataExitCb = (v) => { console.log("EMIT: " + nodeId + ": " + v) }
+        return(dataExitCb)
+    } else if ( cbType === 'reduce' ) {  // this is the default reducer...
+        var reducer = (accumulator, currentValue) => {
+            accumulator.push(currentValue);
+        }
+        return(reducer);
+    }
+
+    return((v) => { console.log(v); return(0); })
+}
+
+
+```
+
+Now the JSON has more information in it so that these class can be used. (This json is in p2.json and the code is in tryout-subclass.js)
+
+
+```
+
+{
+	"nodes" : [
+			   { "id" : "L-sensor-1", "type" : "source", "class" : "queueValues" },
+			   { "id" : "L-sensor-2", "type" : "source", "class" : "passStructs" },
+			   { "id" : "Pump1", "type" : "exit" },
+			   { "id" : "mixer2", "type" : "exit" }
+	],
+	"transitions" : [
+				{
+					 "label" : "pump when ready",
+					 "inputs" : [ "L-sensor-1", "L-sensor-2" ],
+					 "outputs" : [ "Pump1", "mixer2" ],
+					 "reduction" : {
+						"reducer" : "valueArray"
+						"initAccumulator" : []
+					}
+
+				}
+	]
+}
+
+```
 
 
 
