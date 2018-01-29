@@ -110,7 +110,7 @@ Then,
 * step
 * report
 
-This example always shows 0 values for the exit nodes. But, step outputs that they receive the values to perform their tasks 
+This example always shows 0 values for the exit nodes. Exit nodes do not store their resource. They execute a callback that operates on the value derived from the resource that is receives. In many real situations, it may be that the exit node send commands to hardware elements. 
 
  
 # Creating subclasses of the pNode class.
