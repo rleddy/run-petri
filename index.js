@@ -2,6 +2,41 @@
 var EventEmitter = require('events');
 
 
+
+/*
+  run-petri
+
+    This index is the entire code of the run-petri model.
+
+    Three classes are defined and two of them are exposed to the node.js requirment system.
+
+    the three classes are
+    1) pNode - the Petri net node. These are usually seen as circles in the diagrams - the operate as resource holders
+    2) pTransition - the Petri net transition - These are the active parts of the net, usually seen as vertical lines in the diagrams.
+    3) RunPetri - the is the manager of the net. This takes in the net definition object, and operates when the 'step' method is called.
+
+    The classes that are exposed are 1) pNode and 2) RunPetri.
+    The pNode class is exposed in order to allow for derived classes for applications needing more than counts.
+    The RunPetri class is not expressly intended for override, although it is possible. RunPetri works with a
+    general notion of a pNode class or descendenat as do the transition objects.
+    So, customization may be best done just working with the pNode class.
+
+    The RunPetri processing expects that there will be three identifiable kinds of pNodes on any level of specialization.
+    The node types, indicated by a type field, are 1) input nodes, 2) internal nodes, and 3) output nodes.
+
+    Applications specifying instances of these kinds of nodes provide a means for transitions to identify them as upstream and downstreams
+    nodes that the transitions can move resources from and to. Input nodes, have no upstream transitions, and outpus are terminals to the
+    directed acyclic flow.
+
+    Applications can provide callback functions to the output nodes in order to handle emitting values, data, or simple event triggers.
+    The pNodes do not have to be overriden in order to determine an output operations. A callback should be provided.
+
+    In the case where tokens moving through the net have scalar values or have structure, the pNode can be overridden to keep track of the
+    values. A recommendation: move references in small objects that are treated as resources.
+
+*/
+
+
 function clonify(obj) {
     if ( typeof obj === "object" ) {
         var cv = JSON.parse(JSON.toString(obj))
@@ -12,12 +47,43 @@ function clonify(obj) {
 }
 
 
+
+
+
+
+// pNode - Basic pNode behavior.
+//
+// The pNode is mostly an accessed object.
+// A pNode virtually contains a token when it has a resource or resources.
+//
+// In the basic case, a pNode has a resource if it has a count of tokens.
+//
+//  The following methods would be overridden to specialize pNode behavior.
+//
+//  reportObject
+//  count
+//  addResource
+//  consume
+//
+//  The pNode method forward, is call when a transition moves resources from the pNode on to another.
+//  The transition calls 'consume' on one pNode and then calls forward for downstream pNodes with a value constructed from
+//  the results of reducing the consumed resources. (This is a very localised version of map-reduce.
+//
+//  If a pNode has a contraint checking method (determined by descendant classes) the contraint check will have to be passed
+//  before 'forward' can operate.  After this check, the type of the pNode will be important.
+//  If the pNode is an output and there is an exit node callback, the callback will be called.
+//  Otherwise, the resource value is added be a call to addResource.
+//
+//  ------ ------  ------ ------
+
+
+
 module.exports.pNode = class pNode {
 
     // nodeType - source, exit, internal
     //
 
-    constructor(id,nodeType)  {
+    constructor(id,nodeType,target)  {
 
         this.id = id;
         this.type = nodeType;
@@ -28,6 +94,11 @@ module.exports.pNode = class pNode {
         this.contraints = undefined;  // descendents may
         this.exitCallBack = undefined;
 
+        this.inhibits = false;
+        if ( nodeType == "inhibit" ) {
+            this.inhibits = target;
+        }
+
         this.resource = 0;  // default is a count
     }
 
@@ -36,8 +107,12 @@ module.exports.pNode = class pNode {
         return(this.id)
     }
 
-    hasResource() {
-        return(this.count() > 0);
+    hasResource(label) {
+        var marked = (this.count() > 0);
+        if ( this.inhibits ) {
+            if ( this.inhibits == label ) return(!marked)
+        }
+        return(marked);
     }
 
     forward(value) {
@@ -87,6 +162,13 @@ module.exports.pNode = class pNode {
 
 
 
+
+//
+// pTransition -
+//
+//
+
+
 class pTransition {
 
     constructor(label)  {
@@ -127,9 +209,12 @@ class pTransition {
         }
     }
 
+    // The transition will be invoked only if it is enabled.
+    // it is enabled if all prenodes have resource and do not
+    // inhibit this node.
     all_preNodes_active() {
         var all_ready = this.preNodes.every(pnode => {
-                                                return(pnode.hasResource());
+                                                return(pnode.hasResource(this.label));
                                             })
         return(all_ready);
     }
@@ -151,6 +236,14 @@ class pTransition {
     }
 
 }
+
+
+
+
+
+// RunPetri
+//
+//  This is the operation container for a single Petr net instance.
 
 
 module.exports.RunPetri = class RunPetri extends EventEmitter {
@@ -175,14 +268,19 @@ module.exports.RunPetri = class RunPetri extends EventEmitter {
                                           var type = nodeDef.type;
 
                                           if ( type === "source" ) {
-                                              pNet.on(id,pNet.reactor(id));
+                                              this.on(id,this.reactor(id));
+                                          }
+
+                                          var target = undefined;
+                                          if ( nodeDef.transition ) {
+                                              target = nodeDef.transition;
                                           }
 
                                           if ( nodeDef.class && nodeClasses ) {
                                               var nodeClass = nodeClasses[nodeDef.class];
-                                              return(new nodeClass(id,type));
+                                              return(new nodeClass(id,type,target));
                                           } else {
-                                              return(new pNode(id,type));
+                                              return(new pNode(id,type,target));
                                           }
 
                                       });
@@ -202,6 +300,8 @@ module.exports.RunPetri = class RunPetri extends EventEmitter {
         this.sourceNodes = {};
         this.exitNodes = {};
 
+        this.claimed = {};
+
         nodes.forEach(pnode => {
                           this.nodes[pnode.identity()] = pnode;  // add it in
                           //source, exit, internal
@@ -214,13 +314,22 @@ module.exports.RunPetri = class RunPetri extends EventEmitter {
                                 this.setExitCB(pnode.identity(),cbGen(pnode.identity(),'exit'))
                               }
                           }
-                     })
+                     });
+
+
 
         this.transitions = transitions.map(transDef => {
 
                                                var trans = new pTransition(transDef.label);
                                                transDef.inputs.forEach(input => {
                                                                            var nn = this.nodes[input];
+
+                                                                           if ( this.claimed[input] && (nn.inhibits != transDef.label) ) {
+                                                                               throw new Error(`${input} used more than once in transitions''`)
+                                                                           } else if (nn.inhibits != transDef.label) {
+                                                                               this.claimed[input] = true;
+                                                                           }
+
                                                                            trans.addPreNode(nn);
                                                                        })
 
