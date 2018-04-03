@@ -1,14 +1,14 @@
 {
-  "name": "run-petri",
-  "version": "0.1.0",
-  "description": "A simple node module for managing Petri Net state in applications",
+  "name": "run-petri-async",
+  "version": "0.1.1",
+  "description": "A simple node module for managing Petri Net state in applications. Async version",
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/rleddy/run-petri.git"
+    "url": "git+https://github.com/rleddy/run-petri-sync.git"
   },
   "keywords": [
     "Petri",
@@ -19,5 +19,5 @@
   "bugs": {
     "url": "https://github.com/rleddy/run-petri/issues"
   },
-  "homepage": "https://github.com/rleddy/run-petri#readme"
+  "homepage": "https://github.com/rleddy/run-petri-async#readme"
 }

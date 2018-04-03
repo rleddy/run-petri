@@ -15,7 +15,7 @@ const nodeClasses = { pNode };
 
 function callbackGenerator(id,cbType) {
     if ( cbType === 'exit' ) {  // a fairly generic exit callback
-        var dataExitCb = (v) => { console.log("EMIT: " + nodeId + ": " + v) }
+        var dataExitCb = (v) => { console.log("EMIT: " + id + ": " + v) }
         return(dataExitCb)
     } else if ( cbType === 'reduce' ) {  // this is the default reducer...
         var reducer = (accumulator, currentValue) => accumulator + currentValue;
@@ -65,7 +65,7 @@ rl.on('line', (line) => {
                       var jsonData = fs.readFileSync(filename,'ascii').toString();
                       var net_def = JSON.parse(jsonData);
 
-                      pNet.setNetworkFromJson(net_def,dataExitCb);
+                      pNet.setNetworkFromJson(net_def,callbackGenerator);
 
                   } catch ( e ) {
                       console.dir(e,{ depth: null, colors: true })
@@ -85,19 +85,6 @@ rl.on('line', (line) => {
                   pNet.emit(sourceNode,value);
                   console.log("<")
                   //
-                  break;
-              }
-
-
-              case "step" : {
-                  pNet.step();
-                  console.log("<")
-                  break;
-              }
-
-              case "report" : {
-                  console.dir(pNet.report())
-                  console.log("<")
                   break;
               }
 
