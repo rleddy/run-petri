@@ -78,7 +78,7 @@ function clonify(obj) {
 
 
 
-module.exports.pNode = class pNode {
+class pNode {
 
     // nodeType - source, exit, internal
     //
@@ -142,7 +142,7 @@ module.exports.pNode = class pNode {
     // overrides start here....
 
     reportObject() {
-        return([this.id,this.resource])
+        return(this.resource)
     }
 
     count() {
@@ -160,6 +160,8 @@ module.exports.pNode = class pNode {
 
 }
 
+
+module.exports.pNode = pNode;
 
 
 
