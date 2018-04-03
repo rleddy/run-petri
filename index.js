@@ -97,12 +97,8 @@ function clonify(obj) {
 
 
 
-<<<<<<< HEAD
 
 class pNode extends EventEmitter {
-=======
-class pNode {
->>>>>>> 048ac72746327465c244bcb53e8c80c38d3f6251
 
     // nodeType - source, exit, internal
     //
@@ -188,7 +184,7 @@ class pNode {
     // overrides start here....
 
     reportObject() {
-        return(this.resource)
+        return([this.id,this.resource])
     }
 
     count() {
@@ -212,8 +208,6 @@ class pNode {
 
 }
 
-
-module.exports.pNode = pNode;
 
 
 module.exports.pNode = pNode;

@@ -1,13 +1,7 @@
 {
-<<<<<<< HEAD
   "name": "run-petri-async",
   "version": "0.1.1",
   "description": "A simple node module for managing Petri Net state in applications. Async version",
-=======
-  "name": "run-petri",
-  "version": "0.1.1",
-  "description": "A simple node module for managing Petri Net state in applications",
->>>>>>> 048ac72746327465c244bcb53e8c80c38d3f6251
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
