@@ -1,6 +1,6 @@
 {
-  "name": "run-petri-async",
-  "version": "0.1.1",
+  "name": "run-petri",
+  "version": "0.1.2",
   "description": "A simple node module for managing Petri Net state in applications. Async version",
   "main": "index.js",
   "scripts": {
