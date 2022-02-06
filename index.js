@@ -2,28 +2,9 @@
 var EventEmitter = require('events');
 
 
+
 /*
-  run-petri-async
-
-    What differs from run-petri is the absence of a step method.
-
-    All action moves foward based on the cascade of states and the readiness of transitions.
-    Confusions will be handled by cloning tokens that then follow splits into downstream transitions.
-    Hence the forwarding of the resource is treated as a broadcast.
-
-    In node.js this split forwarding is done simply by emiting an event, which is sent to all listeners.
-    So, during initialization the event listener lists are established by processing the configuration,
-    which includes the net definition.
-
-
-    Capturing the state of the petri net for display becomes a little more difficult, since a simple report of the net
-    state won't be able to be seen. Events will go by too quickly for the messages to be sent to browsers for state displays.
-    So, a State Trace Sink, may be introduced. The sink waits for events from the Petri nodes (places).
-    The Trace Sink looks for a "place-trace" event, which has the as parameters the id of the state, the value updating the place,
-    and the time in UNIX epoch milliseconds.
-
-
-    //----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
+  run-petri
 
     This index is the entire code of the run-petri model.
 
@@ -97,15 +78,12 @@ function clonify(obj) {
 
 
 
-
-class pNode extends EventEmitter {
+class pNode {
 
     // nodeType - source, exit, internal
     //
 
     constructor(id,nodeType,target)  {
-
-        super();
 
         this.id = id;
         this.type = nodeType;
@@ -122,21 +100,6 @@ class pNode extends EventEmitter {
         }
 
         this.resource = 0;  // default is a count
-
-        this.transitions = [];
-
-        this.traceSink = null;
-    }
-
-    // if the trace sink is set, it will be used to tell a log manager
-    // that it has been visited at a particular point in time.
-
-    setTraceSink(sink) {
-        this.traceSink = sink;
-    }
-
-    trace(value) {
-        this.traceSink.emit("place-trace",this.id,value,Date.now());
     }
 
 
@@ -176,15 +139,10 @@ class pNode extends EventEmitter {
     }
 
 
-    addTransition(trans) {
-        this.transitions.push(trans);
-    }
-
-
     // overrides start here....
 
     reportObject() {
-        return([this.id,this.resource])
+        return(this.resource)
     }
 
     count() {
@@ -193,12 +151,6 @@ class pNode extends EventEmitter {
 
     addResource(value) {
         this.resource += parseInt(value);  // default is to add how many
-        this.transitions.forEach( t => {
-                                     t.emit(this.id,value, this, this.resource);
-                                     if ( this.traceSink ) {  // for visualization...
-                                         this.trace(value);
-                                     }
-                                 })
     }
 
     consume() {
@@ -207,7 +159,6 @@ class pNode extends EventEmitter {
     }
 
 }
-
 
 
 module.exports.pNode = pNode;
@@ -220,16 +171,13 @@ module.exports.pNode = pNode;
 //
 
 
-class pTransition extends EventEmitter {
+class pTransition {
 
     constructor(label)  {
-
-        super()
         //
         this.preNodes = [];
         this.postNodes = [];
         this.nodeLookup = {};
-        this.nodeEnableCheck = {};
 
         this.resourceGroup = [];
         //
@@ -258,14 +206,6 @@ class pTransition extends EventEmitter {
             this.nodeLookup[pnode.identity()] = pnode;
             //
             this.preNodes.push(pnode);
-            pnode.addTransition(this);
-            this.on(pnode.identity(),(value,node,qty) => {
-                        this.nodeEnableCheck[node.identity()] = node.consume(qty);
-                        if ( this.matchInputs() ) {
-                            this.consume_preNode_resources();
-                            this.output_resource_to_postNodes();
-                        }
-                    })
         } else {
             throw new Exception("Adding node to post transition twice.")
         }
@@ -281,19 +221,14 @@ class pTransition extends EventEmitter {
         return(all_ready);
     }
 
-
-    matchInputs() {
-        return(true)
-    }
-
     consume_preNode_resources() {
-        this.resourceGroup = Object.keys(this.nodeEnableCheck).map( key => { return(this.nodeEnableCheck[key]); } );
+        this.resourceGroup = this.preNodes.map(pnode => { return(pnode.consume()); } );
         this.forwardValue = this.resourceGroup.reduce(this.reducer,this.initAccumulator);
     }
 
     output_resource_to_postNodes() {
         this.postNodes.forEach(pnode => {
-                                   pnode.emit("transition",this.forwardValue);
+                                   pnode.forward(this.forwardValue);
                                });
     }
 
@@ -326,6 +261,7 @@ module.exports.RunPetri = class RunPetri extends EventEmitter {
         this.exitNodes = {};
 
     }
+
 
     setNetworkFromJson(net_def,cbGen,nodeClasses) {
         var nodes = net_def.nodes.map(nodeDef => {
@@ -397,14 +333,11 @@ module.exports.RunPetri = class RunPetri extends EventEmitter {
                                                                            }
 
                                                                            trans.addPreNode(nn);
-                                                                    })
+                                                                       })
 
                                                transDef.outputs.forEach(output => {
                                                                             var nn = this.nodes[output];
                                                                             trans.addPostNode(nn);
-                                                                            nn.on("transition", (reduction) => {
-                                                                                      nn.forward(reduction);
-                                                                                  });
                                                                         })
 
                                                if ( transDef.reduction ) {
@@ -417,6 +350,7 @@ module.exports.RunPetri = class RunPetri extends EventEmitter {
                                                return(trans);
                             })
     }
+
 
 
     setExitCB(nodeName,cb) {
@@ -432,6 +366,11 @@ module.exports.RunPetri = class RunPetri extends EventEmitter {
         this.exitNodes[nodeName].setExitCB(cb);
     }
 
+    /*
+      pnet.on("level-sensor1", this.reactor("level-sensor1") );
+
+      pnet.emit( "level-sensor1", "0.5" );
+    */
 
     reactor(sourceName) {
         return((value) => {
@@ -442,12 +381,24 @@ module.exports.RunPetri = class RunPetri extends EventEmitter {
                })
     }
 
+    step() {
+        this.transitions.forEach(trans => {
+                                     if ( trans.all_preNodes_active() ) {
+                                         trans.consume_preNode_resources();
+                                         trans.output_resource_to_postNodes();
+                                     }
+                                 })
+    }
 
-    setTraceSink(sink) {
-        for ( var k in this.nodeLookup ) {
-            var nn = this.nodeLookup[k];
-            nn.setTraceSink(sink);
+
+    report() {
+        var reportObj = {};
+
+        for ( var nid in this.nodes ) {
+            reportObj[nid] = this.nodes[nid].reportObject();
         }
+
+        return(reportObj);
     }
 
 }
