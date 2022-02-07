@@ -101,8 +101,9 @@ You will see in the code that there is a switch statement. By looking at the cas
 - Use ```send <node-name>``` to put some number of tokens into a node.
 - Use ```step``` to make transitions fire.
 
-For example load our example Petr net, p1.json.
+For example, load our example Petri net, p1.json.
 Then, 
+
 * send L-sensor-1 3
 * step
 * report
@@ -110,7 +111,7 @@ Then,
 * step
 * report
 
-This example always shows 0 values for the exit nodes. Exit nodes do not store their resource. They execute a callback that operates on the value derived from the resource that is receives. In many real situations, it may be that the exit node send commands to hardware elements. 
+This example always shows 0 values for the exit nodes. Exit nodes do not store their resource. They execute a callback that operates on the value derived from the resource that is receives. In many real situations, it may be that the exit node sends commands to hardware elements. 
 
  
 # Creating Subclasses of the pNode Class.

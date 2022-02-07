@@ -5,9 +5,6 @@ var pNode = PetriClasses.pNode;
 var RunPetri = PetriClasses.RunPetri;
 
 
-
-
-
 class queueValues extends pNode {
     //
     constructor(id,nodeType) {
@@ -66,10 +63,11 @@ const nodeClasses = { pNode, queueValues, passStructs };
 function callbackGenerator(id,cbType) {
 
     if ( cbType === 'exit' ) {  // a fairly generic exit callback
-        var dataExitCb = (v) => { console.log("EMIT: " + nodeId + ": " + v) }
+        let nodeId = id
+        let dataExitCb = (v) => { console.log("EMIT: " + nodeId + ": " + v) }
         return(dataExitCb)
     } else if ( cbType === 'reduce' ) {  // this is the default reducer...
-        var reducer = (accumulator, currentValue) => {
+        let reducer = (accumulator, currentValue) => {
             accumulator.push(currentValue);
         }
         return(reducer);

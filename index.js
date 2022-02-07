@@ -207,7 +207,7 @@ class pTransition {
             //
             this.preNodes.push(pnode);
         } else {
-            throw new Exception("Adding node to post transition twice.")
+            throw new Exception("Adding node to pre transition twice.")
         }
     }
 
