@@ -1,7 +1,5 @@
 
-var EventEmitter = require('events');
-
-
+const EventEmitter = require('events');
 
 /*
   run-petri
@@ -49,8 +47,6 @@ function clonify(obj) {
 
 
 
-
-
 // pNode - Basic pNode behavior.
 //
 // The pNode is mostly an accessed object.
@@ -75,7 +71,6 @@ function clonify(obj) {
 //  Otherwise, the resource value is added be a call to addResource.
 //
 //  ------ ------  ------ ------
-
 
 
 class pNode {
@@ -110,30 +105,38 @@ class pNode {
     hasResource(label) {
         var marked = (this.count() > 0);
         if ( this.inhibits ) {
-            if ( this.inhibits == label ) return(!marked)
+            if ( this.inhibits === label ) return(!marked)
         }
         return(marked);
     }
 
+    // forward -- move a value to final output or store the value for a transition during stepping.
+    // A transition will call this, allowing transition outputs to fan out.
     forward(value) {
 
-        var v = clonify(value);
+        var v = clonify(value);         // if the value is a sum of inputs, this will be overkill (useful when object are in transit)
 
-        if ( this.contraints !== undefined ) {
-            if ( !(this.contraints(v)) ) return(false)
+        if ( this.contraints !== undefined ) {              // The values is coming from a transition (after reduction)
+            // This exposes contraints on forwarding to the JSON definition. By restricting override to the node, 
+            // this allows for transitions values to be filtered as if they were on the transition. 
+            // (check other version for customizing this behavior on the transition)
+            if ( !(this.contraints(v)) ) return(false)      //
         }
 
-        if ( this.type === "exit" ) {
+        if ( this.type === "exit" ) {           // An exit node will work on emiting values to networks or hardware.
             if ( this.exitCallBack ) {
                 this.exitCallBack(v);
             }
         } else {
-            this.addResource(v);
+            this.addResource(v);                // If not sending the value away, then store it on the node
         }
 
         return(true);
     }
 
+    // Nodes of type "exit" - these are terminals of the DAG.
+    // see above forward(value)
+    // the cb method is a consumer of "value". cb does not return a result
     setExitCB(cb) {
         this.exitCallBack = cb;
     }
@@ -149,6 +152,10 @@ class pNode {
         return(this.resource)
     }
 
+    // addResource
+    //      -- Descendants may override this method in order to utilize 
+    //      -- their own storage module for value.
+    //      -- this is then called by the private _add_resource methods which emits values to transitions.
     addResource(value) {
         this.resource += parseInt(value);  // default is to add how many
     }
@@ -158,6 +165,10 @@ class pNode {
         return(1);
     }
 
+    clear() {
+        this.resource = 0;
+    }
+
 }
 
 
@@ -165,7 +176,7 @@ module.exports.pNode = pNode;
 
 
 
-//
+//                                          TRANSITIONS
 // pTransition -
 //
 //
@@ -216,16 +227,27 @@ class pTransition {
     // inhibit this node.
     all_preNodes_active() {
         var all_ready = this.preNodes.every(pnode => {
-                                                return(pnode.hasResource(this.label));
+                                                return(pnode.hasResource(this.label));   // the label identifies this transition
                                             })
         return(all_ready);
     }
 
+
+    // consume_preNode_resources
+    // step 1:  Go through all nodes sending values to this transition 
+    //          Form an array of outputs determined by the each node's 'consume' method
+    // step 2:  Reduce the array using either default initialization and reduction,
+    //          or use the custom initializer and reducer set by 'setSpecialReduction' 
+    //          which is specified in the network's JSON input
     consume_preNode_resources() {
         this.resourceGroup = this.preNodes.map(pnode => { return(pnode.consume()); } );
         this.forwardValue = this.resourceGroup.reduce(this.reducer,this.initAccumulator);
     }
 
+    // output_resource_to_postNodes
+    // For each node that takes input from this transition, 
+    //  take the value to be forwarded, forwardValue, which was computed in 'consume_preNode_resources'
+    //  and assign the value to the given node by calling the node's 'forward' method.
     output_resource_to_postNodes() {
         this.postNodes.forEach(pnode => {
                                    pnode.forward(this.forwardValue);
@@ -381,11 +403,14 @@ module.exports.RunPetri = class RunPetri extends EventEmitter {
                })
     }
 
+    // step
+    //  -- Look at all the transitions in this Petri-net and fire them 
+    //  -- if all their precondtions are set
     step() {
         this.transitions.forEach(trans => {
-                                     if ( trans.all_preNodes_active() ) {
-                                         trans.consume_preNode_resources();
-                                         trans.output_resource_to_postNodes();
+                                     if ( trans.all_preNodes_active() ) {   //  all_preNodes_active -- all their precondtions are set
+                                         trans.consume_preNode_resources(); //  Get the value from the input nodes
+                                         trans.output_resource_to_postNodes();  // transition computed values to output nodes.
                                      }
                                  })
     }
