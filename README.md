@@ -23,15 +23,16 @@ And, the exported classes are:
 Changes of behavior from the default are to be made by subclassing: ***pNode***.
 The way pNode may be subclassed will be discussed later.
 
-Petri nets are made up of nodes and transitions in an acyclic graph. (A transitions is a type of node).
+Petri nets are made up of nodes and transitions in an acyclic graph. (A transitions is a type of node). Often, a Petri-net has a representation in matrix form. But, for this module, the network is maintained as an in-memory graph of nodes and references. More the representation and alternatives can be found here [copious-petri-modules](https://www.github.com/copious-world/petri-modules)
 
 The **pNode** class provides a default Petri Net behavior, keeping track of a token count. The token count is updated when a transition is triggered. The transition merely moves input node resources (decrements the token count of input nodes) to a reduction in the output nodes (increments the token count of output nodes). 
 
 The class, **RunPetri**, is the class that takes in the net definition, a JSON object, so that the network model may be stored and used. The class RunPetri exposes methods for adding in resources. running transitions, and finally executing pNode methods on nodes that deliver outputs to applications. 
 
-Every time the 'step' method of RunPetri is called, RunPetri objects will examine each transition element to see if it has enough inputs to fire. If it does, the transition methods will reduce the input resources and transition the result of the reduction to the output nodes. (The default behavior for reduction is to AND the inputs and use the result to increment the outputs.)
+(Sync version): Every time the 'step' method of RunPetri is called, RunPetri objects will examine each transition element to see if it has enough inputs to fire. If it does, the transition methods will reduce the input resources and transition the result of the reduction to the output nodes. (The default behavior for reduction is to AND the inputs and use the result to increment the outputs.)
 
-The application program may require the module. The requirement statement will produce an object exposing the class definitions. For example: 
+The node.js application program may *require* this module. The requirement statement will produce an object exposing the class definitions. For example: 
+
 ```
 var PetriClasses = require('run-petri');
 var RunPetri = PetriClasses.RunPetri
@@ -46,22 +47,23 @@ var net_def = <any way of defining the JSON object.>
 pNet.setNetworkFromJson(net_def)
 ```
 
-The JSON object referenced by net_def in the example above has an array of nodes definitions and an array of transitions.
+The JSON object referenced by *net_def* in the example above has an array of nodes definitions and an array of transitions. The method *pNet.setNetworkFromJson*, compiles the JSON definition.
 
 Once the nodes and transitions are compiled by the RunPetri instance, the nodes (circels in Petri net diagrams) may receive values.
 
-When all the inputs nodes of a transition contain values, the Petri net may perform actions that move the values forward through reductions. Transitions that have all of their inputs containing values, are called "active" transitions. 
+Typically, nodes that take in inputs from external sources, networks, driver ports, etc. will be the first nodes to receive values. These nodes may be refered to as ***input nodes*** for the whole systems. Each transition receives activation from input places, those are nodes that point to the transition and may be internal to the network.
+
+When all the places nodes of a transition contain values, the Petri net may perform actions that move the values forward through reductions. Transitions that have all of their inputs containing values, are called "active" transitions. 
 
 It is up to the application program to trigger the execution of the active transitions. At any time, the application may call pNet.step(), and drive the values forward. 
 
 When the appliation calls pNet.step(), *step* examines all transitions for activation and then calls upon the reduction methods of the transition move the values. 
 
+Eventually, some transition will write its reduced value to an ***exit*** place. Such a place node will transfer its values out to networks or machines.
 
 The RunPetri class is defined with a way for the application program to pass values into it asynchronoulsy. The JSON object may contain definitions of nodes that will be called *sources*. The RunPetri instance compiles event handlers for events named with the ids of the source nodes. In this way, processes that take in data asynchronously may emit values to the source nodes, creating new resources that may flow throught the net. For example, if a source node is named, "sensor1", the applcation may call, pNet.emit("sensor1",value).
 
-
 # The JSON Definition Object
-
 
 Here is an example of a JSON definition object for RunPeti:
 
